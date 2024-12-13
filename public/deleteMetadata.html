@@ -1,0 +1,64 @@
+<html>
+  <head>
+    <title>Payment Metadata Manager</title>
+  </head>
+  <body>
+    <p><a href="/">Back to Home</a></p>
+    <h1>Payment Metadata Manager</h1>
+    <div id="metadata-container">Loading...</div>
+
+    <script>
+      async function fetchPaymentMetadata() {
+        try {
+          const response = await fetch("/payment-metadata"); // Adjust path if necessary
+          const metadataList = await response.json();
+          const metadataContainer =
+            document.getElementById("metadata-container");
+          metadataContainer.innerHTML = "";
+
+          metadataList.forEach((item) => {
+            const listItem = document.createElement("div");
+            listItem.setAttribute("id", `item-${item.id}`);
+            listItem.innerHTML = `
+            <strong>ID:</strong> ${item.id} <br>
+            <strong>Type:</strong> ${item.type} <br>
+            <strong>JPT:</strong> ${JSON.stringify(item.jpt)} <br>
+            <button onclick="deleteMetadata('${item.id}')">Delete</button>
+            <hr>
+          `;
+            metadataContainer.appendChild(listItem);
+          });
+        } catch (error) {
+          console.error("Error fetching metadata:", error);
+        }
+      }
+
+      async function deleteMetadata(paymentMetadataId) {
+        const updateToken = "abc"; // Example update token
+        try {
+          const response = await fetch(
+            `/payment-metadata/${paymentMetadataId}?updateToken=${updateToken}`,
+            {
+              method: "DELETE",
+            }
+          );
+
+          if (response.ok) {
+            const itemElement = document.getElementById(
+              `item-${paymentMetadataId}`
+            );
+            if (itemElement) itemElement.remove();
+          } else {
+            const errorData = await response.json();
+            alert(`Failed to delete: ${errorData.error}`);
+          }
+        } catch (error) {
+          console.error("Error deleting metadata:", error);
+          alert("Error deleting metadata");
+        }
+      }
+
+      window.onload = fetchPaymentMetadata;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Update Metadata</title>
+  </head>
+  <body>
+    <p><a href="/">Back to Home</a></p>
+    <h1>Update Payment Metadata</h1>
+
+    <!-- Input for Metadata ID -->
+    <label for="metadataId">Metadata ID:</label>
+    <input
+      type="text"
+      id="metadataId"
+      placeholder="Enter metadata ID"
+      value="2sgy87cgd"
+    />
+
+    <!-- Input for Update Token -->
+    <label for="updateToken">Update Token:</label>
+    <input
+      type="text"
+      id="updateToken"
+      placeholder="Enter update token"
+      value="12345"
+    />
+
+    <!-- Update Button -->
+    <button id="updateMetadataBtn">Update Metadata</button>
+
+    <!-- Section to display the response -->
+    <div id="metadataResponse" style="margin-top: 20px">
+      <h2>Updated Metadata:</h2>
+      <pre id="updatedMetadata">Waiting for response...</pre>
+    </div>
+
+    <script>
+      // Function to generate a random JPT
+      function generateRandomJpt() {
+        return { foo: Math.random().toString(36).substr(2, 5) }; // Random string for demo purposes
+      }
+
+      // Function to send the update request
+      async function updateMetadata() {
+        const id = document.getElementById("metadataId").value.trim();
+        const updateToken = document.getElementById("updateToken").value.trim();
+
+        // Validate inputs
+        if (!id || !updateToken) {
+          alert("Both Metadata ID and Update Token are required.");
+          return;
+        }
+
+        const payload = {
+          id,
+          updateToken,
+          jpt: generateRandomJpt(), // Generate a random JPT for demo purposes
+          type: "bitcoin-lightning", // Example type
+        };
+
+        try {
+          const response = await fetch("/payment-metadata", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload), // Sending payload as JSON
+          });
+
+          const responseData = await response.json(); // Parse the response JSON
+          console.log("Response Data:", responseData); // Log the response to the console
+
+          // Check if the response contains data and update the DOM
+          const updatedMetadataElement =
+            document.getElementById("updatedMetadata");
+          if (updatedMetadataElement) {
+            updatedMetadataElement.textContent = JSON.stringify(
+              responseData,
+              null,
+              2
+            ); // Display the updated metadata
+          } else {
+            console.error("Element with id 'updatedMetadata' not found.");
+          }
+        } catch (error) {
+          console.error("Error updating metadata:", error);
+        }
+      }
+
+      // Event listener for the button click
+      document
+        .getElementById("updateMetadataBtn")
+        .addEventListener("click", updateMetadata);
+    </script>
+  </body>
+</html>

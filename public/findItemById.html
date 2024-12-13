@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fetch Payment Metadata</title>
+  </head>
+  <body>
+    <p><a href="/">Back to Home</a></p>
+    <h1>Fetch Payment Metadata</h1>
+    <label for="metadataId">Enter Metadata ID:</label>
+    <input
+      type="text"
+      id="metadataId"
+      placeholder="e.g., 12345"
+      value="2sgy87cgd"
+    />
+    <button id="fetchBtn">Fetch Metadata</button>
+    <div id="output">Data will appear here...</div>
+
+    <script>
+      const fetchBtn = document.getElementById("fetchBtn");
+      const outputDiv = document.getElementById("output");
+
+      fetchBtn.addEventListener("click", async () => {
+        const metadataId = document.getElementById("metadataId").value.trim();
+
+        if (!metadataId) {
+          outputDiv.textContent = "Please enter a valid Metadata ID.";
+          return;
+        }
+
+        try {
+          const response = await fetch(`/payment-metadata/${metadataId}`);
+
+          if (!response.ok) {
+            const error = await response.json();
+            outputDiv.textContent = `Error: ${error.error || "Unknown error"}`;
+            return;
+          }
+
+          const data = await response.json();
+
+          // Render the fetched metadata in the output div
+          outputDiv.innerHTML = `
+          <h2>Payment Metadata</h2>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+        } catch (err) {
+          console.error("Error fetching metadata:", err);
+          outputDiv.textContent =
+            "Failed to fetch data. Please try again later.";
+        }
+      });
+    </script>
+  </body>
+</html>
