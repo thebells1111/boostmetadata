@@ -1,0 +1,132 @@
+<html>
+  <head>
+    <title>Boost Metadata Demo</title>
+    <script type="module">
+      import {
+        launchModal,
+        launchPaymentModal,
+      } from "https://esm.sh/@getalby/bitcoin-connect@3.6.3";
+      import { LightningAddress } from "https://esm.sh/@getalby/lightning-tools";
+      import "https://esm.sh/@getalby/bitcoin-connect@3.6.3";
+
+      async function handleDonation() {
+        const donationData = {
+          address: document.getElementById("donationAddress").value.trim(),
+          amount: parseInt(document.getElementById("donationAmount").value, 10),
+        };
+
+        if (
+          !donationData.address ||
+          isNaN(donationData.amount) ||
+          donationData.amount <= 0
+        ) {
+          alert(
+            "Please provide a valid Lightning Address and positive Amount."
+          );
+          return;
+        }
+
+        try {
+          const ln = new LightningAddress(donationData.address);
+          await ln.fetch();
+          const invoice = await ln.requestInvoice({
+            satoshi: donationData.amount,
+            comment: "BoostMetadata Test",
+          });
+
+          const { setPaid } = launchPaymentModal({
+            invoice: invoice.paymentRequest,
+            onPaid: async ({ preimage }) => {
+              clearInterval(checkPaymentInterval);
+              let payload = {
+                type: "bitcoin-lightning",
+                jpt: { preimage },
+                amount: donationData.amount,
+                metadata: {
+                  message: document.getElementById("boostagram").value.trim(),
+                },
+              };
+
+              try {
+                const response = await fetch("/payment-metadata", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(payload), // Sending payload as JSON
+                });
+
+                const responseData = await response.json(); // Parse the response JSON
+                console.log("Response Data:", responseData); // Log the response to the console
+              } catch (error) {
+                console.error("Error sending metadata:", error);
+              }
+            },
+            onCancelled: () => {
+              clearInterval(checkPaymentInterval);
+              alert("Payment cancelled");
+            },
+          });
+
+          const checkPaymentInterval = setInterval(async () => {
+            const paid = await invoice.verifyPayment();
+
+            if (paid && invoice.preimage) {
+              setPaid({
+                preimage: invoice.preimage,
+              });
+            }
+          }, 1000);
+        } catch (error) {
+          alert("An error occurred: " + error.message);
+          console.error(error);
+        }
+      }
+
+      window.handleDonation = handleDonation;
+    </script>
+  </head>
+  <body>
+    <p><a href="/">Back to Home</a></p>
+
+    <main>
+      <h1>Bitcoin Connect Donation Modal Demo</h1>
+      <p>
+        This client-side web application requests permission to donate to a
+        Lightning Address using Bitcoin Connect.
+      </p>
+
+      <form>
+        <label for="donationAddress"> Lightning Address: </label>
+        <input
+          id="donationAddress"
+          type="text"
+          name="address"
+          placeholder="Enter Lightning Address"
+          value=""
+          required
+        />
+
+        <label for="donationAmount"> Amount (sats): </label>
+        <input
+          id="donationAmount"
+          type="number"
+          name="amount"
+          placeholder="Enter Amount in sats"
+          value=""
+          required
+        />
+
+        <button type="button" onclick="handleDonation()">Send Donation</button>
+        <br />
+        <br />
+        <label style="display: block" for="boostagram"> Boostagram: </label>
+        <textarea
+          style="display: block; height: 200px; width: 400px"
+          id="boostagram"
+          placeholder="Boostagram Message"
+        ></textarea>
+      </form>
+    </main>
+  </body>
+</html>

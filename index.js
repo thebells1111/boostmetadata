@@ -33,6 +33,12 @@ app.use("/payment-metadata", paymentMetadataRouter);
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "home.html"));
 });
+app.get("/demo/bitcoin-connect", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "bitcoinConnect.html"));
+});
+app.get("/demo/all-metadata", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "viewMetadata.html"));
+});
 app.get("/demo/add-metadata", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "addMetadata.html"));
 });

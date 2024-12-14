@@ -1,10 +1,10 @@
 <html>
   <head>
-    <title>Payment Metadata Manager</title>
+    <title>Metadata</title>
   </head>
   <body>
     <p><a href="/">Back to Home</a></p>
-    <h1>Payment Metadata Manager</h1>
+    <h1>Metadata</h1>
     <div id="metadata-container">Loading...</div>
 
     <script>
@@ -24,39 +24,15 @@
             <strong>Type:</strong> ${item.type} <br>
             <strong>JPT:</strong> ${JSON.stringify(item.jpt)} <br>
             <strong>Amount:</strong> ${JSON.stringify(item.amount)} <br>
-            <strong>Metadata:</strong> ${JSON.stringify(item.metadata)} <br>
-            <button onclick="deleteMetadata('${item.id}')">Delete</button>
+            <strong>Metadata:</strong> ${JSON.stringify(
+              item.metadata
+            )} <br>           
             <hr>
           `;
             metadataContainer.appendChild(listItem);
           });
         } catch (error) {
           console.error("Error fetching metadata:", error);
-        }
-      }
-
-      async function deleteMetadata(paymentMetadataId) {
-        const updateToken = "abc"; // Example update token
-        try {
-          const response = await fetch(
-            `/payment-metadata/${paymentMetadataId}?updateToken=${updateToken}`,
-            {
-              method: "DELETE",
-            }
-          );
-
-          if (response.ok) {
-            const itemElement = document.getElementById(
-              `item-${paymentMetadataId}`
-            );
-            if (itemElement) itemElement.remove();
-          } else {
-            const errorData = await response.json();
-            alert(`Failed to delete: ${errorData.error}`);
-          }
-        } catch (error) {
-          console.error("Error deleting metadata:", error);
-          alert("Error deleting metadata");
         }
       }
 

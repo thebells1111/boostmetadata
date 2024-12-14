@@ -4,25 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fetch Payment Metadata</title>
-  </head>
-  <body>
-    <p><a href="/">Back to Home</a></p>
-    <h1>Fetch Payment Metadata</h1>
-    <label for="metadataId">Enter Metadata ID:</label>
-    <input
-      type="text"
-      id="metadataId"
-      placeholder="e.g., 12345"
-      value="2sgy87cgd"
-    />
-    <button id="fetchBtn">Fetch Metadata</button>
-    <div id="output">Data will appear here...</div>
-
     <script>
-      const fetchBtn = document.getElementById("fetchBtn");
-      const outputDiv = document.getElementById("output");
-
-      fetchBtn.addEventListener("click", async () => {
+      async function fetchMetaData() {
+        const outputDiv = document.getElementById("output");
         const metadataId = document.getElementById("metadataId").value.trim();
 
         if (!metadataId) {
@@ -51,7 +35,20 @@
           outputDiv.textContent =
             "Failed to fetch data. Please try again later.";
         }
-      });
+      }
     </script>
+  </head>
+  <body>
+    <p><a href="/">Back to Home</a></p>
+    <h1>Fetch Payment Metadata</h1>
+    <label for="metadataId">Enter Metadata ID:</label>
+    <input
+      type="text"
+      id="metadataId"
+      placeholder="e.g., 12345"
+      value="2sgy87cgd"
+    />
+    <button id="fetchBtn" onclick="fetchMetaData()">Fetch Metadata</button>
+    <div id="output">Data will appear here...</div>
   </body>
 </html>
