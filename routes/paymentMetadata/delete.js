@@ -1,5 +1,5 @@
-module.exports = (storeMetadata) => {
-  return (req, res) => {
+function deleteHandler(storeMetadata) {
+  return function (req, res) {
     const { paymentMetadataId } = req.params;
     const { updateToken } = req.query;
 
@@ -15,4 +15,6 @@ module.exports = (storeMetadata) => {
 
     res.status(200).send({ message: "Payment metadata deleted successfully" });
   };
-};
+}
+
+export default deleteHandler;

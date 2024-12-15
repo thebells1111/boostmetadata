@@ -1,11 +1,12 @@
-const express = require("express");
+import express from "express";
+import createHandler from "./create.js";
+import deleteHandler from "./delete.js";
+import getAllHandler from "./getAll.js";
+import getByIdHandler from "./getById.js";
+import findByRSSItemHandler from "./findByRSSItem.js";
+import updateHandler from "./update.js";
+
 const router = express.Router();
-const createHandler = require("./create");
-const deleteHandler = require("./delete");
-const getAllHandler = require("./getAll");
-const getByIdHandler = require("./getById");
-const findByRSSItemHandler = require("./findByRSSItem");
-const updateHandler = require("./update");
 
 let storeMetadata; // Placeholder for the store
 
@@ -36,5 +37,6 @@ const configureStore = (customStore) => {
   }
 };
 
-module.exports.paymentMetadataRouter = router;
-module.exports.configureStore = configureStore;
+const paymentMetadataRouter = router;
+
+export { paymentMetadataRouter, configureStore };

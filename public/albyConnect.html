@@ -1,0 +1,91 @@
+
+  <html>
+    <head>
+      <title>Alby API Demo</title>
+    </head>
+    <body>
+      <h1>Alby API Demo</h1>
+      <h2>Log in with <a id="alby-login" href=""> Alby </a></h2>
+
+      <button onclick="sendSats()">Send Sats</button>
+
+      <script>
+        async function loadAlby() {
+          // Get the current URL
+          const url = window.location.href;
+
+          // Create a URL object
+          const urlObj = new URL(url);
+
+          // Use URLSearchParams to get the 'code' parameter
+          const code = urlObj.searchParams.get("code");
+
+          console.log(code);
+
+          if (code) {
+            console.log("checking Alby code");
+            let redirect_uri = url.split("/?")[0].split("?")[0];
+            console.log(redirect_uri);
+            // redirect_uri = redirect_uri.slice(0, -1);
+
+            let res = await fetch(
+                "/alby/auth?code=" +
+                code +
+                "&redirect_uri=" +
+                redirect_uri,
+              {
+                credentials: "include",
+              }
+            );
+            let data = await res.json();
+            console.log(data);
+            const urlWithoutQuery = url.split("?")[0];
+            window.history.replaceState(null, null, urlWithoutQuery);
+          } else {
+            console.log("refresh");
+            let res = await fetch("/alby/refresh", {
+              credentials: "include",
+            });
+            let data = await res.json();
+            console.log(data)
+          }
+        }
+
+        async function sendSats() {
+		const res = await fetch('/alby/lnurlp', {
+			method: 'POST',
+			credentials: 'include',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ 
+                recipients: [{lnaddress:'thesplitkit@getalby.com', amount: 100},{lnaddress: 'sjb@strike.me', amount: 100}], 
+            id: '12345-1234-54321', 
+            metadata: {amount: 200, message: 'Howdy dudes'}  
+        })
+		});
+		const data = await res.json();
+		console.log(data);
+	}
+
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            const albyClientId = "Jwi7oDyndT"; //replace with your own ID
+
+        let redirectUrl = `https://getalby.com/oauth?client_id=${albyClientId}`;
+        redirectUrl += `&response_type=code&redirect_uri=${
+          window.location.href.split("?")[0]
+        }`;
+        redirectUrl += `&scope=account:read%20balance:read%20payments:send%20invoices:read`;
+
+        document.getElementById("alby-login").href = redirectUrl;
+
+        loadAlby()
+
+  // Code to run after the DOM is loaded
+  console.log("DOM is fully loaded");
+});
+      </script>
+    </body>
+  </html>
+</div>

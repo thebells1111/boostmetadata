@@ -1,5 +1,5 @@
-module.exports = (storeMetadata) => {
-  return async (req, res) => {
+function updateHandler(storeMetadata) {
+  return async function (req, res) {
     const { id, jpt, type, updateToken } = req.body;
 
     if (!id || !updateToken || !jpt || !type) {
@@ -23,4 +23,6 @@ module.exports = (storeMetadata) => {
       res.status(500).send({ error: "Failed to update payment metadata" });
     }
   };
-};
+}
+
+export default updateHandler;

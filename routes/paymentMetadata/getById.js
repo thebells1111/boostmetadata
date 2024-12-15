@@ -1,5 +1,5 @@
-module.exports = (storeMetadata) => {
-  return async (req, res) => {
+function getByIdHandler(storeMetadata) {
+  return async function (req, res) {
     const { paymentMetadataId } = req.params;
 
     try {
@@ -15,4 +15,6 @@ module.exports = (storeMetadata) => {
       res.status(500).send({ error: "Failed to fetch payment metadata" });
     }
   };
-};
+}
+
+export default getByIdHandler;

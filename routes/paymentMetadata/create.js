@@ -1,5 +1,5 @@
-module.exports = (storeMetadata) => {
-  return (req, res) => {
+function createHandler(storeMetadata) {
+  return function (req, res) {
     console.log(req.body);
     const { jpt, type, amount, metadata } = req.body;
 
@@ -18,4 +18,6 @@ module.exports = (storeMetadata) => {
     storeMetadata.add(newMetadata);
     res.status(200).send(newMetadata);
   };
-};
+}
+
+export default createHandler;

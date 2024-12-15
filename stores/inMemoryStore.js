@@ -37,4 +37,4 @@ const storeMetadata = {
   },
 };
 
-module.exports = storeMetadata;
+export default storeMetadata;

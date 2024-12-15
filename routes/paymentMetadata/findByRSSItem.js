@@ -1,5 +1,5 @@
-module.exports = (storeMetadata) => {
-  return async (req, res) => {
+function findByRSSItemHandler(storeMetadata) {
+  return async function (req, res) {
     const { podcastGuid, rssItemGuid } = req.query;
 
     if (!podcastGuid || !rssItemGuid) {
@@ -8,10 +8,11 @@ module.exports = (storeMetadata) => {
 
     try {
       const allMetadata = await storeMetadata.getAll();
-      const filteredMetadata = allMetadata.filter(
-        (item) =>
+      const filteredMetadata = allMetadata.filter(function (item) {
+        return (
           item.podcastGuid === podcastGuid && item.rssItemGuid === rssItemGuid
-      );
+        );
+      });
 
       if (filteredMetadata.length === 0) {
         return res.status(404).send({ error: "No matching metadata found" });
@@ -23,4 +24,6 @@ module.exports = (storeMetadata) => {
       res.status(500).send({ error: "Failed to fetch payment metadata" });
     }
   };
-};
+}
+
+export default findByRSSItemHandler;

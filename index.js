@@ -1,13 +1,23 @@
-const express = require("express");
-const app = express();
-const path = require("path");
+import express from "express";
+import path from "path";
+import dotenv from "dotenv";
+import helmet from "helmet";
+import cookie from "cookie";
+import { fileURLToPath } from "url";
 
-const inMemoryStore = require("./stores/inMemoryStore");
-
-const {
+import albyRoutes from "./routes/alby/albyRoutes.js";
+import inMemoryStore from "./stores/inMemoryStore.js";
+import {
   paymentMetadataRouter,
   configureStore,
-} = require("./routes/paymentMetadata/index");
+} from "./routes/paymentMetadata/index.js";
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
 
 app.use(express.json()); // Parse JSON request bodies
 
@@ -29,12 +39,33 @@ const schemas = {
   },
 };
 
+let tempTokens = {};
+
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: false,
+  })
+);
+
+app.use((req, res, next) => {
+  req.cookies = cookie.parse(req.headers.cookie || "");
+  next();
+});
+
+if (process.env.ALBY_JWT) {
+  app.use("/alby", albyRoutes(tempTokens));
+}
+
 app.use("/payment-metadata", paymentMetadataRouter);
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "home.html"));
 });
 app.get("/demo/bitcoin-connect", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "bitcoinConnect.html"));
+});
+app.get("/demo/alby-connect", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "albyConnect.html"));
 });
 app.get("/demo/all-metadata", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "viewMetadata.html"));
