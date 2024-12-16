@@ -3,6 +3,7 @@ import path from "path";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import cookie from "cookie";
+import cors from "cors"; // Import the CORS package
 import { fileURLToPath } from "url";
 
 import albyRoutes from "./routes/alby/albyRoutes.js";
@@ -11,6 +12,7 @@ import {
   paymentMetadataRouter,
   configureStore,
 } from "./routes/paymentMetadata/index.js";
+import blackBoxRouter from "./routes/blackbox/webhook.js";
 
 dotenv.config();
 
@@ -22,6 +24,15 @@ const app = express();
 app.use(express.json()); // Parse JSON request bodies
 
 configureStore(inMemoryStore);
+
+// Enable CORS for localhost:5173
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Allow only this origin
+    methods: ["GET", "POST", "PUT", "DELETE"], // Specify allowed methods
+    credentials: true, // Allow credentials (cookies, headers, etc.)
+  })
+);
 
 // API Documentation Metadata
 const PORT = 3000; // Server port
@@ -56,6 +67,8 @@ app.use((req, res, next) => {
 if (process.env.ALBY_JWT) {
   app.use("/alby", albyRoutes(tempTokens));
 }
+
+app.use("/blackbox", blackBoxRouter);
 
 app.use("/payment-metadata", paymentMetadataRouter);
 app.get("/", (req, res) => {

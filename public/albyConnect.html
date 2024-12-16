@@ -7,9 +7,134 @@
       <h1>Alby API Demo</h1>
       <h2>Log in with <a id="alby-login" href=""> Alby </a></h2>
 
-      <button onclick="sendSats()">Send Sats</button>
+      <form id="donationForm">
+        <div id="recipientsContainer">
+          <div class="recipient">
+            <label for="lnaddress_1">Lightning Address:</label>
+            <input
+              id="lnaddress_1"
+              type="text"
+              name="address"
+              placeholder="Enter Lightning Address"
+              value="sjb@strike.me"
+              required
+            />
+
+            <label for="amount_1">Amount (sats):</label>
+            <input
+              id="amount_1"
+              type="number"
+              name="amount"
+              placeholder="Enter Amount in sats"
+              value="100"
+              required
+            />
+          </div>
+        </div>
+
+        <button type="button" id="addRecipientButton" onclick="addRecipient()">
+          Add Recipient
+        </button>
+
+        <br /><br />
+        <label style="display: block" for="boostagram">Boostagram:</label>
+        <textarea
+          style="display: block; height: 200px; width: 400px"
+          id="boostagram"
+          placeholder="Boostagram Message"
+        >
+Boost</textarea
+        >
+
+        <br />
+        <button type="button" onclick="handleDonation()">Send Donation</button>
+      </form>
+
+   
 
       <script>
+    let recipientCount = 1; // Track the number of recipients
+
+async function handleDonation() {
+  const boostagram = document.getElementById("boostagram").value;
+  const recipients = [];
+  const recipientElements = document.querySelectorAll(".recipient");
+
+  recipientElements.forEach((recipient, index) => {
+    const lnaddress = recipient.querySelector(
+      `input[name="address"]`
+    ).value;
+    const amount =
+      recipient.querySelector(`input[name="amount"]`).value;
+
+    if (lnaddress && amount) {
+      recipients.push({ lnaddress, amount: parseInt(amount, 10) });
+    }
+  });
+
+  if (recipients.length > 0) {
+    console.log({ boostagram, recipients });
+    let payload = {
+      type: "bitcoin-lightning",
+      // jpt: { preimage },
+      // amount: donationData.amount,
+      metadata: {
+        message: boostagram.trim(),
+      },
+    };
+
+    try {
+      const response = await fetch("/payment-metadata", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload), // Sending payload as JSON
+      });
+
+      const responseData = await response.json(); // Parse the response JSON
+      console.log("Response Data:", responseData); // Log the response to the console
+      console.log(recipients);
+    
+      sendSats({recipients, id: responseData.id})      
+    } catch (error) {
+      console.error("Error sending metadata:", error);
+    }
+  } else {
+    alert("Please add at least one valid recipient.");
+  }
+}
+
+function addRecipient() {
+  recipientCount++;
+  const container = document.getElementById("recipientsContainer");
+  const recipientDiv = document.createElement("div");
+  recipientDiv.classList.add("recipient");
+  recipientDiv.innerHTML = `
+  <label for="lnaddress_${recipientCount}">Lightning Address:</label>
+  <input
+    id="lnaddress_${recipientCount}"
+    type="text"
+    name="address"
+    placeholder="Enter Lightning Address"
+    value=""
+    required
+  />
+
+  <label for="amount_${recipientCount}">Amount (sats):</label>
+  <input
+    id="amount_${recipientCount}"
+    type="number"
+    name="amount"
+    placeholder="Enter Amount in sats"
+    value=""
+    required
+  />
+`;
+  container.appendChild(recipientDiv);
+}
+
+
         async function loadAlby() {
           // Get the current URL
           const url = window.location.href;
@@ -51,18 +176,14 @@
           }
         }
 
-        async function sendSats() {
+        async function sendSats(metaData) {
 		const res = await fetch('/alby/lnurlp', {
 			method: 'POST',
 			credentials: 'include',
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({ 
-                recipients: [{lnaddress:'thesplitkit@getalby.com', amount: 100},{lnaddress: 'sjb@strike.me', amount: 100}], 
-            id: '12345-1234-54321', 
-            metadata: {amount: 200, message: 'Howdy dudes'}  
-        })
+			body: JSON.stringify(metaData)
 		});
 		const data = await res.json();
 		console.log(data);

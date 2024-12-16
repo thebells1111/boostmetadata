@@ -9,14 +9,9 @@
       import { LightningAddress } from "https://esm.sh/@getalby/lightning-tools";
       import "https://esm.sh/@getalby/bitcoin-connect@3.6.3";
 
-      async function handleDonation() {
-        const donationData = {
-          address: document.getElementById("donationAddress").value.trim(),
-          amount: parseInt(document.getElementById("donationAmount").value, 10),
-        };
-
+      async function sendDonation(donationData, metaDataID) {
         if (
-          !donationData.address ||
+          !donationData.lnaddress ||
           isNaN(donationData.amount) ||
           donationData.amount <= 0
         ) {
@@ -27,40 +22,18 @@
         }
 
         try {
-          const ln = new LightningAddress(donationData.address);
+          const ln = new LightningAddress(donationData.lnaddress);
           await ln.fetch();
+
           const invoice = await ln.requestInvoice({
             satoshi: donationData.amount,
-            comment: "BoostMetadata Test",
+            comment: metaDataID || "",
           });
 
           const { setPaid } = launchPaymentModal({
             invoice: invoice.paymentRequest,
             onPaid: async ({ preimage }) => {
               clearInterval(checkPaymentInterval);
-              let payload = {
-                type: "bitcoin-lightning",
-                jpt: { preimage },
-                amount: donationData.amount,
-                metadata: {
-                  message: document.getElementById("boostagram").value.trim(),
-                },
-              };
-
-              try {
-                const response = await fetch("/payment-metadata", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify(payload), // Sending payload as JSON
-                });
-
-                const responseData = await response.json(); // Parse the response JSON
-                console.log("Response Data:", responseData); // Log the response to the console
-              } catch (error) {
-                console.error("Error sending metadata:", error);
-              }
             },
             onCancelled: () => {
               clearInterval(checkPaymentInterval);
@@ -68,6 +41,7 @@
             },
           });
 
+          // Polling for payment verification
           const checkPaymentInterval = setInterval(async () => {
             const paid = await invoice.verifyPayment();
 
@@ -75,15 +49,113 @@
               setPaid({
                 preimage: invoice.preimage,
               });
+              clearInterval(checkPaymentInterval); // Stop polling when payment is verified
             }
           }, 1000);
+
+          // Wait for the polling process to complete
+          await new Promise((resolve) => {
+            const interval = setInterval(async () => {
+              const paid = await invoice.verifyPayment();
+              if (paid && invoice.preimage) {
+                clearInterval(interval);
+                resolve(); // Resolve the promise when payment is verified
+              }
+            }, 1000);
+          });
         } catch (error) {
           alert("An error occurred: " + error.message);
           console.error(error);
         }
       }
 
-      window.handleDonation = handleDonation;
+      document.addEventListener("DOMContentLoaded", async function () {
+        let recipientCount = 1; // Track the number of recipients
+
+        async function handleDonation() {
+          const boostagram = document.getElementById("boostagram").value;
+          const recipients = [];
+          const recipientElements = document.querySelectorAll(".recipient");
+
+          recipientElements.forEach((recipient, index) => {
+            const lnaddress = recipient.querySelector(
+              `input[name="address"]`
+            ).value;
+            const amount =
+              recipient.querySelector(`input[name="amount"]`).value;
+
+            if (lnaddress && amount) {
+              recipients.push({ lnaddress, amount: parseInt(amount, 10) });
+            }
+          });
+
+          if (recipients.length > 0) {
+            console.log({ boostagram, recipients });
+            let payload = {
+              type: "bitcoin-lightning",
+              // jpt: { preimage },
+              // amount: donationData.amount,
+              metadata: {
+                message: boostagram.trim(),
+              },
+            };
+
+            try {
+              const response = await fetch("/payment-metadata", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload), // Sending payload as JSON
+              });
+
+              const responseData = await response.json(); // Parse the response JSON
+              console.log("Response Data:", responseData); // Log the response to the console
+              console.log(recipients);
+              for (let i = 0, length = recipients.length; i < length; i++) {
+                await sendDonation(recipients[i], responseData.id);
+                console.log("hi");
+              }
+            } catch (error) {
+              console.error("Error sending metadata:", error);
+            }
+          } else {
+            alert("Please add at least one valid recipient.");
+          }
+        }
+
+        function addRecipient() {
+          recipientCount++;
+          const container = document.getElementById("recipientsContainer");
+          const recipientDiv = document.createElement("div");
+          recipientDiv.classList.add("recipient");
+          recipientDiv.innerHTML = `
+          <label for="lnaddress_${recipientCount}">Lightning Address:</label>
+          <input
+            id="lnaddress_${recipientCount}"
+            type="text"
+            name="address"
+            placeholder="Enter Lightning Address"
+            value=""
+            required
+          />
+
+          <label for="amount_${recipientCount}">Amount (sats):</label>
+          <input
+            id="amount_${recipientCount}"
+            type="number"
+            name="amount"
+            placeholder="Enter Amount in sats"
+            value=""
+            required
+          />
+        `;
+          container.appendChild(recipientDiv);
+        }
+
+        window.handleDonation = handleDonation;
+        window.addRecipient = addRecipient;
+      });
     </script>
   </head>
   <body>
@@ -96,38 +168,48 @@
         Lightning Address using Bitcoin Connect.
       </p>
 
-      <form>
-        <label for="donationAddress"> Lightning Address: </label>
-        <input
-          id="donationAddress"
-          type="text"
-          name="address"
-          placeholder="Enter Lightning Address"
-          value=""
-          required
-        />
+      <form id="donationForm">
+        <div id="recipientsContainer">
+          <div class="recipient">
+            <label for="lnaddress_1">Lightning Address:</label>
+            <input
+              id="lnaddress_1"
+              type="text"
+              name="address"
+              placeholder="Enter Lightning Address"
+              value="sjb@strike.me"
+              required
+            />
 
-        <label for="donationAmount"> Amount (sats): </label>
-        <input
-          id="donationAmount"
-          type="number"
-          name="amount"
-          placeholder="Enter Amount in sats"
-          value=""
-          required
-        />
+            <label for="amount_1">Amount (sats):</label>
+            <input
+              id="amount_1"
+              type="number"
+              name="amount"
+              placeholder="Enter Amount in sats"
+              value="100"
+              required
+            />
+          </div>
+        </div>
 
-        <button type="button" onclick="handleDonation()">Send Donation</button>
-        <br />
-        <br />
-        <label style="display: block" for="boostagram"> Boostagram: </label>
+        <button type="button" id="addRecipientButton" onclick="addRecipient()">
+          Add Recipient
+        </button>
+
+        <br /><br />
+        <label style="display: block" for="boostagram">Boostagram:</label>
         <textarea
           style="display: block; height: 200px; width: 400px"
           id="boostagram"
           placeholder="Boostagram Message"
-        ></textarea>
+        >
+Boost</textarea
+        >
+
+        <br />
+        <button type="button" onclick="handleDonation()">Send Donation</button>
       </form>
-      <bc-payment />
     </main>
   </body>
 </html>

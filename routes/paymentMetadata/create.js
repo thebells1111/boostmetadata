@@ -3,7 +3,7 @@ function createHandler(storeMetadata) {
     console.log(req.body);
     const { jpt, type, amount, metadata } = req.body;
 
-    if (!jpt || !type) {
+    if (!type) {
       return res.status(400).send({ error: "Invalid input" });
     }
 

@@ -12,6 +12,8 @@ const lnurlp = async (req, res) => {
 
     let alby = cookies.awt ? jwt.verify(cookies.awt, ALBY_JWT) : undefined;
 
+    console.log(body);
+
     if (alby && body) {
       pendingPayments = pendingPayments.concat(
         body.recipients.map((v) => {
