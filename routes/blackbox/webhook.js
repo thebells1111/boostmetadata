@@ -1,5 +1,12 @@
 import express from "express";
 import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
+import invoices from "./invoices.js";
+import tlv from "./tlv.js";
+
+import inMemoryStore from "../../stores/inMemoryStore.js";
+
+const storeMetadata = inMemoryStore;
 
 const router = express.Router();
 
@@ -27,25 +34,88 @@ router.post("/", (req, res) => {
 });
 
 // GET route to fetch a new token
-router.get("/", async (req, res) => {
-  try {
-    const newToken = generateToken();
-    let metaData = {
-      boostagram: "Boost",
-      id: "test id",
-      recipients: [
-        {
-          lnaddress: "sjb@strike.me",
-          amount: 100,
-        },
-      ],
+router.get("/tlv", async (req, res) => {
+  // process TLV from the POST, if there's a feedGuid, then do the rest.
+
+  if (tlv.feed_guid) {
+    let accountID = req.query.id;
+    //fetch accountData based on accountID
+
+    const account = {
+      name: "Steven B.",
+      address: "steven@getalby.com",
+      allowedGuids: ["6dfbd8e4-f9f3-5ea1-98a1-574134999b3b"],
     };
 
-    sendSats(metaData, newToken);
-    res.json({ message: "Token created successfully", token: newToken });
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send("Internal server error");
+    //check to see if tlv has a feed_guid that's allowed to send sats. Prevents storing undesired data.
+    if (account.allowedGuids.find((v) => v === tlv.feed_guid)) {
+      try {
+        const metaID = uuidv4();
+        const invoice = await getInvoice(
+          account.address,
+          tlv.value_msat_total,
+          metaID
+        );
+        const newMetadata = {
+          id: metaID,
+          type: "bitcoin-lightning",
+          invoice,
+          metadata: tlv,
+        };
+
+        storeMetadata.add(newMetadata);
+
+        // sendSats(metaData, newToken);
+        res.json(newMetadata);
+      } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Internal server error");
+      }
+    } else {
+      res.json({});
+    }
+  } else {
+    res.json({});
+  }
+});
+
+router.get("/webhook", async (req, res) => {
+  // process TLV from the POST, if there's a feedGuid, then do the rest.
+
+  if (tlv.feed_guid) {
+    let accountID = req.query.id;
+    //fetch accountData based on accountID
+
+    const account = {
+      name: "dude",
+      allowedGuids: ["6dfbd8e4-f9f3-5ea1-98a1-574134999b3b"],
+    };
+
+    if (account.allowedGuids.find((v) => v === tlv.feed_guid)) {
+      try {
+        const metaID = uuidv4();
+        const newMetadata = {
+          id: metaID,
+          type: "bitcoin-lightning",
+          metadata: tlv,
+        };
+
+        storeMetadata.add(newMetadata);
+        const allMetadata = await storeMetadata.getAll();
+
+        // sendSats(metaData, newToken);
+        res.json({
+          data: allMetadata,
+        });
+      } catch (error) {
+        console.error(error.message);
+        res.status(500).send("Internal server error");
+      }
+    } else {
+      res.json({});
+    }
+  } else {
+    res.json({});
   }
 });
 
@@ -69,4 +139,65 @@ async function sendSats(metaData, newToken) {
   const data = await res.json();
   console.log("Response from /alby/lnurlp:", data);
   return data;
+}
+
+async function getInvoice(address, amount, metaID) {
+  const [name, server] = address.split("@");
+  const paymentUrl = `https://${server}/.well-known/lnurlp/${name}`;
+
+  try {
+    const res = await fetch(paymentUrl);
+    const data = await res.json();
+
+    if (!data.callback) {
+      throw new Error("Callback URL missing in LNURLP response");
+    }
+
+    const invoiceRes = await fetch(
+      `${data.callback}?amount=${amount}&comment=${metaID}`
+    );
+    const invoiceData = await invoiceRes.json();
+    return invoiceData.pr;
+  } catch (error) {
+    return { success: false };
+  }
+}
+
+async function processPayments(payment, alby_token) {
+  console.log(payment);
+  const [name, server] = payment.lnaddress.split("@");
+  const paymentUrl = `https://${server}/.well-known/lnurlp/${name}`;
+
+  try {
+    const res = await fetch(paymentUrl);
+    const data = await res.json();
+
+    if (!data.callback) {
+      throw new Error("Callback URL missing in LNURLP response");
+    }
+
+    const invoiceRes = await fetch(
+      `${data.callback}?amount=${payment.amount * 1000}&comment=${
+        payment.metaID
+      }`
+    );
+    const invoiceData = await invoiceRes.json();
+    const invoice = invoiceData.pr;
+
+    console.log(invoice);
+
+    const paymentRes = await axios.post(
+      "https://api.getalby.com/payments/bolt11",
+      { invoice },
+      {
+        headers: { Authorization: `Bearer ${alby.access_token}` },
+      }
+    );
+
+    console.log(paymentRes.data);
+    return { success: true };
+  } catch (error) {
+    console.log("Payment Process Error:", error.message || error);
+    return { success: false };
+  }
 }
