@@ -7,7 +7,7 @@ function deleteHandler(storeMetadata) {
       return res.status(400).send({ error: "Invalid update token" });
     }
 
-    const deleted = storeMetadata.delete(paymentMetadataId);
+    const deleted = storeMetadata.deleteById(paymentMetadataId);
 
     if (!deleted) {
       return res.status(404).send({ error: "Payment metadata not found" });

@@ -12,7 +12,7 @@ import {
   paymentMetadataRouter,
   configureStore,
 } from "./routes/paymentMetadata/index.js";
-import blackBoxRouter from "./routes/blackbox/webhook.js";
+import splitBoxRouter from "./routes/splitbox/router.js";
 
 dotenv.config();
 
@@ -68,7 +68,7 @@ if (process.env.ALBY_JWT) {
   app.use("/alby", albyRoutes(tempTokens));
 }
 
-app.use("/blackbox", blackBoxRouter);
+app.use("/splitbox", splitBoxRouter);
 
 app.use("/payment-metadata", paymentMetadataRouter);
 app.get("/", (req, res) => {

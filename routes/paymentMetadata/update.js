@@ -7,7 +7,7 @@ function updateHandler(storeMetadata) {
     }
 
     try {
-      const metadata = await storeMetadata.get(id);
+      const metadata = await storeMetadata.getById(id);
 
       if (!metadata) {
         return res.status(404).send({ error: "Payment metadata not found" });

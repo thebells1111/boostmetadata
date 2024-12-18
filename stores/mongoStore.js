@@ -8,7 +8,8 @@ export const add = async (metadata) => {
   const db = client.db(dbName);
   const collection = db.collection(collectionName);
   await client.connect();
-  await collection.insertOne(metadata);
+  const result = await collection.insertOne(metadata);
+  return result.insertedId;
 };
 
 export const getAll = async () => {
@@ -16,6 +17,33 @@ export const getAll = async () => {
   const collection = db.collection(collectionName);
   await client.connect();
   return await collection.find().toArray();
+};
+
+export const get = async (id) => {
+  const db = client.db(dbName);
+  const collection = db.collection(collectionName);
+  await client.connect();
+  return await collection.findOne({ id });
+};
+
+export const save = async (metadata) => {
+  const db = client.db(dbName);
+  const collection = db.collection(collectionName);
+  await client.connect();
+  const result = await collection.updateOne(
+    { id: metadata.id },
+    { $set: metadata },
+    { upsert: true }
+  );
+  return result.upsertedId || metadata.id;
+};
+
+export const update = async (id, updatedData) => {
+  const db = client.db(dbName);
+  const collection = db.collection(collectionName);
+  await client.connect();
+  const result = await collection.updateOne({ id }, { $set: updatedData });
+  return result.matchedCount > 0 ? await get(id) : null;
 };
 
 export const deleteMetadata = async (id) => {

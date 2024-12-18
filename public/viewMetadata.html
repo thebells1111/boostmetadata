@@ -19,16 +19,7 @@
           metadataList.forEach((item) => {
             const listItem = document.createElement("div");
             listItem.setAttribute("id", `item-${item.id}`);
-            listItem.innerHTML = `
-            <strong>ID:</strong> ${item.id} <br>
-            <strong>Type:</strong> ${item.type} <br>
-            <strong>JPT:</strong> ${JSON.stringify(item.jpt)} <br>
-            <strong>Amount:</strong> ${JSON.stringify(item.amount)} <br>
-            <strong>Metadata:</strong> ${JSON.stringify(
-              item.metadata
-            )} <br>           
-            <hr>
-          `;
+            listItem.innerHTML = `<pre>${JSON.stringify(item, null, 2)}</pre>`;
             metadataContainer.appendChild(listItem);
           });
         } catch (error) {

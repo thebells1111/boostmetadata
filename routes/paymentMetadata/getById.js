@@ -3,7 +3,7 @@ function getByIdHandler(storeMetadata) {
     const { paymentMetadataId } = req.params;
 
     try {
-      const metadata = await storeMetadata.get(paymentMetadataId);
+      const metadata = await storeMetadata.getById(paymentMetadataId);
 
       if (!metadata) {
         return res.status(404).send({ error: "Payment metadata not found" });
