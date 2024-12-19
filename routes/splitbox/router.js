@@ -1,9 +1,8 @@
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
-import fetchFeed from "./functions/fetchFeed.js";
-import fetchItem from "./functions/fetchItem.js";
 import getInvoice from "./functions/getInvoice.js";
 import confirmInvoice from "./functions/confirmInvoice.js";
+import getSplits from "./functions/getSplits.js";
 import processPayments from "./functions/processPayments.js";
 import sendSats from "./functions/sendSats.js";
 
@@ -64,33 +63,12 @@ router.post("/webhook", async (req, res) => {
       let invoice = data.payment_request;
       if (confirmInvoice(preimage, invoice)) {
         await storeMetadata.updateByInvoice(invoice, { settled: true });
-        let splits = [];
+
         const data = await storeMetadata.getByInvoice(invoice);
         const { metadata } = data;
-        let destinations;
+        let splits = await getSplits(metadata);
 
-        if (metadata.feed_guid) {
-          const feedResponse = await fetchFeed(metadata.feed_guid);
-          const feed = feedResponse.feed;
-          let itemResponse;
-          if (metadata.item_guid) {
-            itemResponse = await fetchItem(
-              metadata.feed_guid,
-              metadata.item_guid
-            );
-
-            destinations =
-              itemResponse?.episode?.value?.destinations ||
-              feed?.value?.destinations;
-
-            if (destinations) {
-              splits = splits.concat(destinations);
-            }
-          } else {
-            splits = [];
-          }
-          res.json({ feed, itemResponse, splits });
-        }
+        res.json(splits);
       }
     } else {
     }
