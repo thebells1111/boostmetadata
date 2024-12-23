@@ -15,17 +15,13 @@ const inMemoryStore = [
       app_version: 531800807734,
       url: "https://mp3s.nashownotes.com/bballrss.xml",
       value_msat_total: 100000,
-      message: "test",
+      message: "The Split Box Test Boost",
       sender_name: "Steven₿",
       speed: 1.25,
       reply_address:
         "035ad2c954e264004986da2d9499e1732e5175e1dcef2453c921c6cdcc3536e9d8",
-      reply_custom_key: 0,
-      reply_custom_value: null,
       remote_feed_guid: "7153bbb0-b8c4-521f-80c0-cef62d8ef67b",
       remote_item_guid: "405be9f7-684f-54b8-9035-009111f1933f",
-      value_msat: 68000,
-      name: "Suzanne Santo",
     },
   },
 ];

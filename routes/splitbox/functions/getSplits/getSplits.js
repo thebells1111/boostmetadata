@@ -79,7 +79,7 @@ export default async function getSplits(metadata) {
         remotePercentage
       );
 
-      splits = combineSplits(destinations);
+      splits = combineSplits(destinations, metadata.value_msat_total / 1000);
     } else {
       splits = [];
     }
