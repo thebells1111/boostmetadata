@@ -4,7 +4,6 @@ import getInvoice from "./functions/getInvoice.js";
 import confirmInvoice from "./functions/confirmInvoice.js";
 import getSplits from "./functions/getSplits.js";
 import processPayments from "./functions/processPayments.js";
-import sendSats from "./functions/sendSats.js";
 
 import inMemoryStore from "../../stores/inMemoryStore.js";
 
@@ -40,7 +39,6 @@ router.post("/invoice", async (req, res) => {
 
         storeMetadata.add(newMetadata);
 
-        // sendSats(metaData, newToken);
         res.json(invoice);
       } catch (error) {
         console.error(error.message);

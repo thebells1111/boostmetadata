@@ -1,96 +1,107 @@
-import fetchChannel from "./fetchChannel.js";
-import fetchItem from "./fetchItem.js";
-import fetchFeed from "./fetchFeed.js";
+import fetchChannelFromIndex from "./fetchChannelFromIndex.js";
+import fetchItemFromIndex from "./fetchItemFromIndex.js";
+import fetchRSSFeed from "./fetchRSSFeed.js";
+import normalizeSplits from "./normalizeSplits.js";
+import findVTS from "./findVTS.js";
+import getItemFromRSS from "./getItemFromRSS.js";
+import combineSplits from "./combineSplits.js";
 
 export default async function getSplits(metadata) {
+  let debug = false;
   let splits = [];
 
-  let destinations;
+  let destinations = { mainSplits: [], remoteSplits: [] };
   let channel;
-  let feed;
-  let itemFromFeed;
+  let remoteChannel;
+  let RSS;
+  let remoteRSS;
+  let itemFromRSS;
+  let itemFromRemoteRSS;
   let item;
-  let remoteItemFromMetadata;
-  let remoteItem;
-  let remoteItemFromFeed;
-  let remoteItemFromFeedFromIndex;
+  let VTS;
+  let remoteItemFromRSS;
+  let remoteItemFromIndex;
 
   if (metadata.feed_guid || metadata.feedID) {
-    const channelResponse = await fetchChannel({
+    const channelResponse = await fetchChannelFromIndex({
       guid: metadata.feed_guid,
       id: metadata.feedID,
     });
     channel = channelResponse.feed;
     metadata.feed_guid = channel.podcastGuid;
-    console.log(metadata);
-    feed = await fetchFeed(channel.url);
+    RSS = await fetchRSSFeed(channel.url);
 
     if (metadata.item_guid || metadata.itemID) {
-      const item = await fetchItem({
+      const item = await fetchItemFromIndex({
         feedGuid: metadata.feed_guid,
         itemGuid: metadata.item_guid,
         itemID: metadata.itemID,
       });
 
       metadata.item_guid = item.guid;
-      itemFromFeed = feed?.item.find(
-        (v) =>
-          metadata?.item_guid === v?.guid ||
-          metadata?.item_guid === v?.guid?.["#text"]
-      );
-      remoteItemFromFeed = findRemoteItem(
-        itemFromFeed?.["podcast:value"]?.["podcast:valueTimeSplit"],
+
+      itemFromRSS = getItemFromRSS(RSS, metadata);
+
+      VTS = findVTS(
+        itemFromRSS?.["podcast:value"]?.["podcast:valueTimeSplit"],
         metadata.ts
       );
 
-      remoteItemFromMetadata = await fetchItem({
-        feedGuid: metadata.remote_feed_guid,
-        itemGuid: metadata.remote_item_guid,
+      const remoteChannelResponse = await fetchChannelFromIndex({
+        guid:
+          VTS["podcast:remoteItem"]["@_feedGuid"] || metadata.remote_feed_guid,
       });
-      remoteItemFromFeedFromIndex = await fetchItem({
-        feedGuid: remoteItemFromFeed["podcast:remoteItem"]["@_feedGuid"],
-        itemGuid: remoteItemFromFeed["podcast:remoteItem"]["@_itemGuid"],
+      remoteChannel = remoteChannelResponse.feed;
+      remoteRSS = await fetchRSSFeed(remoteChannel.url);
+      itemFromRemoteRSS = getItemFromRSS(remoteRSS, {
+        item_guid: VTS["podcast:remoteItem"]["@_itemGuid"],
       });
 
-      destinations = item?.value?.destinations || channel?.value?.destinations;
+      remoteItemFromIndex = await fetchItemFromIndex({
+        feedGuid:
+          VTS["podcast:remoteItem"]["@_feedGuid"] || metadata.remote_feed_guid,
+        itemGuid:
+          VTS["podcast:remoteItem"]["@_itemGuid"] || metadata.remote_item_guid,
+      });
 
-      if (destinations) {
-        splits = splits.concat(destinations);
-      }
+      let remotePercentage = Number(VTS["@_remotePercentage"]) || null;
+      let mainPercentage = remotePercentage ? 100 - remotePercentage : 100;
+
+      destinations.mainSplits = normalizeSplits(
+        itemFromRSS?.["podcast:value"]?.["podcast:valueRecipient"] ||
+          RSS?.["podcast:value"]?.["podcast:valueRecipient"],
+        mainPercentage
+      );
+
+      destinations.remoteSplits = normalizeSplits(
+        itemFromRemoteRSS?.["podcast:value"]?.["podcast:valueRecipient"] ||
+          remoteRSS?.["podcast:value"]?.["podcast:valueRecipient"],
+        remotePercentage
+      );
+
+      splits = combineSplits(destinations);
     } else {
       splits = [];
     }
   }
 
-  return {
-    feed,
-    channel,
-    item,
-    itemFromFeed,
-    splits,
-    metadata,
-    remoteItemFromMetadata,
-    remoteItemFromFeedFromIndex,
-    remoteItem,
-    remoteItemFromFeed,
-  };
-}
-
-function findRemoteItem(data, timestamp) {
-  for (let i = 0; i < data.length; i++) {
-    const current = data[i];
-    const next = data[i + 1];
-
-    const startTime = parseFloat(current["@_startTime"]);
-    const endTime = current["@_endTime"]
-      ? parseFloat(current["@_endTime"])
-      : next
-      ? parseFloat(next["@_startTime"])
-      : startTime + parseFloat(current["@_duration"]);
-
-    if (timestamp >= startTime && timestamp < endTime) {
-      return current;
-    }
+  if (debug) {
+    return {
+      RSS,
+      remoteRSS,
+      channel,
+      remoteChannel,
+      item,
+      itemFromRSS,
+      itemFromRemoteRSS,
+      splits,
+      destinations,
+      metadata,
+      VTS,
+      remoteItemFromIndex,
+      remoteItemFromRSS,
+    };
+  } else {
+    return splits;
   }
-  return null; // Return null if no match is found
 }
