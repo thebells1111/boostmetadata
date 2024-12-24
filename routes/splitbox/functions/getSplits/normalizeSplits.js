@@ -5,7 +5,7 @@ export default function normalizeSplits(destinations, percentage = 100) {
   if (!destinations || destinations.length === 0) {
     return { feesDestinations: [], splitsDestinations: [] };
   }
-
+  destinations = [].concat(destinations);
   let feesDestinations = [];
   let splitsDestinations = [];
   let splitTotal = 0;

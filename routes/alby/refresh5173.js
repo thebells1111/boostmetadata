@@ -18,8 +18,8 @@ const refresh = async (req, res, next) => {
         method: "POST",
         url: "https://api.getalby.com/oauth/token",
         auth: {
-          username: req.ALBY_ID,
-          password: req.ALBY_SECRET,
+          username: req.ALBY_ID_5173,
+          password: req.ALBY_SECRET_5173,
         },
         data: formData,
         headers: {

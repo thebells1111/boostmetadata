@@ -9,7 +9,7 @@ const tlv = {
   app_version: 531800807734,
   url: "https://mp3s.nashownotes.com/bballrss.xml",
   value_msat_total: 100000,
-  message: "This is a test",
+  message: "This is a test of The Split Box",
   sender_name: "Steven B",
   speed: 1.25,
   reply_address:

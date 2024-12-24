@@ -16,7 +16,7 @@
   }
 
   async function simulatePaid() {
-    let res = await fetch("http://localhost:3000/splitbox/webhook", {
+    let res = await fetch("http://localhost:3000/splitbox/webhook-sync", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

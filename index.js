@@ -21,10 +21,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-app.use(express.json()); // Parse JSON request bodies
-
-configureStore(inMemoryStore);
-
 // Enable CORS for localhost:5173
 app.use(
   cors({
@@ -33,6 +29,10 @@ app.use(
     credentials: true, // Allow credentials (cookies, headers, etc.)
   })
 );
+
+app.use(express.json()); // Parse JSON request bodies
+
+configureStore(inMemoryStore);
 
 // API Documentation Metadata
 const PORT = 3000; // Server port

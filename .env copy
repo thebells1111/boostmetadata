@@ -1,5 +1,5 @@
-ALBY_USERNAME = get your client id from https://getalby.com/developer oauth keys
-ALBY_PASSWORD = get your client secret from https://getalby.com/developer oauth keys
+ALBY_ID = get your client id from https://getalby.com/developer oauth keys
+ALBY_SECRET = get your client secret from https://getalby.com/developer oauth keys
 ALBY_JWT = this is a random 36 character string to encode the alby refresh token
 ALBY_AUTH_TOKEN = get your Account Auth Token from https://getalby.com/developer
 PI_API_SECRET = API secret for the Podcast Index

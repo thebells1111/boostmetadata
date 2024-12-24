@@ -1,33 +1,33 @@
 import axios from "axios";
 import jwt from "jsonwebtoken";
 import FormData from "form-data";
+import crypto from "crypto";
 
-const refresh = async (req, res, next) => {
+const auth = async (req, res, next) => {
   try {
-    const cookies = req.cookies;
-    let alby = cookies.awt
-      ? jwt.verify(cookies.awt, process.env.ALBY_JWT)
-      : undefined;
+    let code = req.query.code;
+    let redirect_uri = req.query.redirect_uri;
 
-    if (alby) {
+    if (code) {
       var formData = new FormData();
-      formData.append("refresh_token", alby.refresh_token);
-      formData.append("grant_type", "refresh_token");
+      formData.append("code", code);
+      formData.append("redirect_uri", redirect_uri);
+      formData.append("grant_type", "authorization_code");
 
       let resolve = await axios({
         method: "POST",
         url: "https://api.getalby.com/oauth/token",
         auth: {
-          username: req.ALBY_ID,
-          password: req.ALBY_SECRET,
+          username: process.env.ALBY_ID_5173,
+          password: process.env.ALBY_SECRET_5173,
         },
         data: formData,
         headers: {
           "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
         },
       }).catch((error) => {
-        console.log("alby refresh error: ", error.response.data);
-        throw error; // Propagate error up to outer catch block
+        console.log("alby auth error: ", error.response.data);
+        throw error;
       });
 
       if (!resolve) {
@@ -38,23 +38,22 @@ const refresh = async (req, res, next) => {
         expiresIn: "10d",
       });
 
-      let accessToken = resolve.data.access_token;
-
       const [account, balance] = await Promise.all([
         axios({
           url: "https://api.getalby.com/user/value4value",
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: { Authorization: `Bearer ${resolve.data.access_token}` },
         }).catch((error) => {
-          console.log("alby refresh error: ", error.response.data);
-          throw error; // Propagate error up to outer catch block
+          console.log("alby auth error: ", error.response.data);
+          throw error;
         }),
 
         axios({
           url: "https://api.getalby.com/balance",
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: { Authorization: `Bearer ${resolve.data.access_token}` },
         }).catch((error) => {
-          console.log("alby refresh error: ", error.response.data);
-          throw error; // Propagate error up to outer catch block
+          console.log("alby auth error: ", error.response.data);
+          throw error;
+          k;
         }),
       ]);
 
@@ -62,7 +61,14 @@ const refresh = async (req, res, next) => {
         return;
       }
 
-      let user = { ...account.data, ...balance.data };
+      let tempCode = crypto.randomBytes(16).toString("hex");
+      let user = { ...account.data, ...balance.data, tempCode };
+      try {
+        req.tempTokens[tempCode] = newToken;
+        setTimeout(() => {
+          delete req.tempTokens[tempCode];
+        }, 60000);
+      } catch (error) {}
 
       res.cookie("awt", newToken, {
         maxAge: 10 * 24 * 60 * 60 * 1000,
@@ -83,4 +89,4 @@ const refresh = async (req, res, next) => {
   }
 };
 
-export default refresh;
+export default auth;

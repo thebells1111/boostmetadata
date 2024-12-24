@@ -18,8 +18,8 @@ const auth = async (req, res, next) => {
         method: "POST",
         url: "https://api.getalby.com/oauth/token",
         auth: {
-          username: process.env.ALBY_USERNAME,
-          password: process.env.ALBY_PASSWORD,
+          username: process.env.ALBY_ID,
+          password: process.env.ALBY_SECRET,
         },
         data: formData,
         headers: {

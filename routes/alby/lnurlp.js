@@ -66,8 +66,11 @@ async function processPayments(payment, alby) {
       }
     );
 
-    console.log(paymentRes.data);
-    return { success: true };
+    return {
+      success: true,
+      payment: paymentRes.data,
+      lnaddress: payment.lnaddress,
+    };
   } catch (error) {
     console.log("Payment Process Error:", error.message || error);
     return { success: false };
